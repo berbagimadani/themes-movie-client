@@ -162,4 +162,92 @@ $(document).ready(function () {
             }
         }), e.preventDefault()
     })
+
+
 });
+
+//$('[data-toggle="popover"]').popover();
+
+
+/*  popover */
+
+
+var originalLeave = $.fn.popover.Constructor.prototype.leave;
+$.fn.popover.Constructor.prototype.leave = function(obj){
+  var self = obj instanceof this.constructor ?
+    obj : $(obj.currentTarget)[this.type](this.getDelegateOptions()).data('bs.' + this.type)
+  var container, timeout;
+
+  originalLeave.call(this, obj);
+
+  if(obj.currentTarget) {
+    container = $(obj.currentTarget).siblings('.popover')
+    timeout = self.timeout;
+    container.one('mouseenter', function(){
+      //We entered the actual popover – call off the dogs
+      clearTimeout(timeout);
+      //Let's monitor popover content instead
+      container.one('mouseleave', function(){
+        $.fn.popover.Constructor.prototype.leave.call(self, self);
+      });
+    })
+  }
+};
+
+$('body').popover({
+    selector: '[data-popover]',
+    trigger: 'click hover',
+    //placement: 'auto',
+    delay: {show: 50, hide: 400},
+    html: true,
+    content: function(){
+        // Create a random temporary id for the content's parent div
+        // with a unique number just in case.
+        var content_id = "content-id-" + $.now();
+
+        $.ajax({
+            type: 'GET',
+            url: $(this).attr('data-url'),
+            cache: false,
+        }).done(function(d){
+            $('#' + content_id).html(d);
+        });
+
+        return '<div id="' + content_id + '">Loading...</div>';
+
+        // Initially, the content() function returns a parent div,
+        // which shows "Loading..." message.
+        // As soon as the ajax call is complete, the parent div inside
+        // the popover gets the ajax call's result.
+
+    }
+});
+
+
+/*
+$('.ml-item').popover({
+    trigger: 'click hover',
+    //placement: 'auto',
+    html: true,
+    content: function(){
+        // Create a random temporary id for the content's parent div
+        // with a unique number just in case.
+        var content_id = "content-id-" + $.now();
+
+        $.ajax({
+            type: 'GET',
+            url: $(this).attr('data'),
+            cache: false,
+        }).done(function(d){
+            $('#' + content_id).html(d);
+        });
+
+        return '<div id="' + content_id + '">Loading...</div>';
+
+        // Initially, the content() function returns a parent div,
+        // which shows "Loading..." message.
+        // As soon as the ajax call is complete, the parent div inside
+        // the popover gets the ajax call's result.
+
+    }
+}); */
